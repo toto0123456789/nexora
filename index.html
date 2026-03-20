@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Authentification</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy: #0f1c2e;
+      --navy-mid: #1a2d45;
+      --navy-light: #243a54;
+      --gold: #c9a84c;
+      --gold-light: #e2c47a;
+      --white: #f4f1eb;
+      --muted: #8a9bb0;
+      --error: #e05c5c;
+      --success: #4caf86;
+      --radius: 4px;
+      --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background-color: var(--navy);
+      color: var(--white);
+      min-height: 100vh;
+      display: flex;
+      align-items: stretch;
+      overflow: hidden;
+    }
+
+    /* ── Left panel ── */
+    .panel-left {
+      flex: 1;
+      background: var(--navy-mid);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 60px 56px;
+      position: relative;
+      overflow: hidden;
+    }
+    .panel-left::before {
+      content: '';
+      position: absolute;
+      top: -120px; left: -120px;
+      width: 480px; height: 480px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(201,168,76,0.12) 0%, transparent 70%);
+    }
+    .panel-left::after {
+      content: '';
+      position: absolute;
+      bottom: -80px; right: -80px;
+      width: 360px; height: 360px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(201,168,76,0.08) 0%, transparent 70%);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      z-index: 1;
+    }
+    .brand-icon {
+      width: 40px; height: 40px;
+      border: 2px solid var(--gold);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .brand-icon svg { width: 20px; height: 20px; fill: var(--gold); }
+    .brand-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.3rem;
+      letter-spacing: 0.04em;
+      color: var(--white);
+    }
+
+    .left-content { z-index: 1; }
+    .left-content h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 3vw, 2.8rem);
+      line-height: 1.2;
+      color: var(--white);
+      margin-bottom: 20px;
+    }
+    .left-content h1 span { color: var(--gold); }
+    .left-content p {
+      font-size: 0.95rem;
+      color: var(--muted);
+      line-height: 1.7;
+      max-width: 340px;
+    }
+
+    .features { z-index: 1; display: flex; flex-direction: column; gap: 18px; }
+    .feature-item { display: flex; align-items: center; gap: 14px; }
+    .feature-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--gold);
+      flex-shrink: 0;
+    }
+    .feature-item span { font-size: 0.88rem; color: var(--muted); }
+
+    /* ── Right panel ── */
+    .panel-right {
+      width: 480px;
+      background: var(--navy);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 56px;
+      position: relative;
+      border-left: 1px solid rgba(201,168,76,0.12);
+    }
+
+    .form-container { width: 100%; }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      margin-bottom: 40px;
+      gap: 0;
+    }
+    .tab-btn {
+      flex: 1;
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 500;
+      padding: 0 0 14px;
+      cursor: pointer;
+      position: relative;
+      transition: color var(--transition);
+      letter-spacing: 0.04em;
+    }
+    .tab-btn.active { color: var(--gold); }
+    .tab-btn.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px; left: 0; right: 0;
+      height: 2px;
+      background: var(--gold);
+    }
+    .tab-btn:hover:not(.active) { color: var(--white); }
+
+    /* Forms */
+    .form-view { display: none; animation: fadeUp 0.4s ease; }
+    .form-view.active { display: block; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .form-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.6rem;
+      margin-bottom: 6px;
+    }
+    .form-sub {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 32px;
+    }
+
+    .field { margin-bottom: 22px; }
+    .field label {
+      display: block;
+      font-size: 0.78rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .field input {
+      width: 100%;
+      background: var(--navy-mid);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: var(--radius);
+      color: var(--white);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      padding: 13px 16px;
+      outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    .field input::placeholder { color: rgba(255,255,255,0.2); }
+    .field input:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(201,168,76,0.12);
+    }
+    .field input.error { border-color: var(--error); }
+
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+    .field-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .field-meta label { margin-bottom: 0; }
+    .forgot-link {
+      font-size: 0.78rem;
+      color: var(--gold);
+      text-decoration: none;
+      transition: opacity var(--transition);
+    }
+    .forgot-link:hover { opacity: 0.7; }
+
+    .msg {
+      font-size: 0.82rem;
+      margin-top: 8px;
+      min-height: 18px;
+    }
+    .msg.error { color: var(--error); }
+    .msg.success { color: var(--success); }
+
+    .btn-primary {
+      width: 100%;
+      background: var(--gold);
+      color: var(--navy);
+      border: none;
+      border-radius: var(--radius);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 14px;
+      cursor: pointer;
+      transition: background var(--transition), transform 0.15s;
+      margin-top: 8px;
+    }
+    .btn-primary:hover { background: var(--gold-light); transform: translateY(-1px); }
+    .btn-primary:active { transform: translateY(0); }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 24px 0;
+      color: rgba(255,255,255,0.15);
+      font-size: 0.78rem;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: rgba(255,255,255,0.08);
+    }
+
+    .switch-text {
+      text-align: center;
+      font-size: 0.84rem;
+      color: var(--muted);
+      margin-top: 20px;
+    }
+    .switch-text a {
+      color: var(--gold);
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .switch-text a:hover { text-decoration: underline; }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      text-decoration: none;
+      margin-bottom: 30px;
+      transition: color var(--transition);
+    }
+    .back-link:hover { color: var(--gold); }
+    .back-link svg { width: 14px; height: 14px; }
+
+    .strength-bar {
+      display: flex;
+      gap: 4px;
+      margin-top: 8px;
+    }
+    .strength-bar span {
+      flex: 1;
+      height: 3px;
+      border-radius: 2px;
+      background: rgba(255,255,255,0.1);
+      transition: background 0.3s;
+    }
+    .strength-bar span.weak   { background: var(--error); }
+    .strength-bar span.fair   { background: #e09a4c; }
+    .strength-bar span.good   { background: var(--gold); }
+    .strength-bar span.strong { background: var(--success); }
+
+    .check-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 56px; height: 56px;
+      border-radius: 50%;
+      background: rgba(76,175,134,0.12);
+      border: 2px solid var(--success);
+      margin: 0 auto 24px;
+    }
+    .check-icon svg { width: 28px; height: 28px; stroke: var(--success); fill: none; stroke-width: 2.5; }
+
+    @media (max-width: 860px) {
+      .panel-left { display: none; }
+      .panel-right { width: 100%; border-left: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- LEFT PANEL -->
+<div class="panel-left">
+  <div class="brand">
+    <div class="brand-icon">
+      <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+    </div>
+    <span class="brand-name">Nexora</span>
+  </div>
+
+  <div class="left-content">
+    <h1>Bienvenue sur<br>votre espace <span>professionnel</span></h1>
+    <p>Une plateforme sécurisée pensée pour les entreprises qui exigent excellence et fiabilité.</p>
+  </div>
+
+  <div class="features">
+    <div class="feature-item">
+      <div class="feature-dot"></div>
+      <span>Authentification sécurisée à deux facteurs</span>
+    </div>
+    <div class="feature-item">
+      <div class="feature-dot"></div>
+      <span>Chiffrement de bout en bout</span>
+    </div>
+    <div class="feature-item">
+      <div class="feature-dot"></div>
+      <span>Conformité RGPD garantie</span>
+    </div>
+  </div>
+</div>
+
+<!-- RIGHT PANEL -->
+<div class="panel-right">
+  <div class="form-container">
+
+    <!-- TABS -->
+    <div class="tabs" id="tabs">
+      <button class="tab-btn active" data-tab="login">Connexion</button>
+      <button class="tab-btn" data-tab="register">Inscription</button>
+    </div>
+
+    <!-- ── LOGIN ── -->
+    <div class="form-view active" id="view-login">
+      <div class="form-title">Connexion</div>
+      <div class="form-sub">Accédez à votre espace sécurisé.</div>
+
+      <div class="field">
+        <label>Adresse e-mail</label>
+        <input type="email" id="login-email" placeholder="vous@exemple.com"/>
+      </div>
+
+      <div class="field">
+        <div class="field-meta">
+          <label>Mot de passe</label>
+          <a href="#" class="forgot-link" id="go-forgot">Mot de passe oublié ?</a>
+        </div>
+        <input type="password" id="login-password" placeholder="••••••••"/>
+      </div>
+
+      <div class="msg error" id="login-error"></div>
+      <button class="btn-primary" id="btn-login">Se connecter</button>
+
+    </div>
+
+    <!-- ── REGISTER ── -->
+    <div class="form-view" id="view-register">
+      <div class="form-title">Créer un compte</div>
+      <div class="form-sub">Rejoignez la plateforme en quelques secondes.</div>
+
+      <div class="field field-row">
+        <div>
+          <label>Prénom</label>
+          <input type="text" id="reg-first" placeholder="Jean"/>
+        </div>
+        <div>
+          <label>Nom</label>
+          <input type="text" id="reg-last" placeholder="Dupont"/>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Adresse e-mail</label>
+        <input type="email" id="reg-email" placeholder="vous@exemple.com"/>
+      </div>
+
+      <div class="field">
+        <label>Mot de passe</label>
+        <input type="password" id="reg-password" placeholder="Minimum 8 caractères" oninput="checkStrength(this.value)"/>
+        <div class="strength-bar">
+          <span id="s1"></span><span id="s2"></span><span id="s3"></span><span id="s4"></span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Confirmer le mot de passe</label>
+        <input type="password" id="reg-confirm" placeholder="••••••••"/>
+      </div>
+
+      <div class="msg error" id="reg-error"></div>
+      <button class="btn-primary" id="btn-register">Créer mon compte</button>
+
+    </div>
+
+    <!-- ── FORGOT ── -->
+    <div class="form-view" id="view-forgot">
+      <a href="#" class="back-link" id="back-from-forgot">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 12H5M12 5l-7 7 7 7"/>
+        </svg>
+        Retour à la connexion
+      </a>
+      <div class="form-title">Mot de passe oublié</div>
+      <div class="form-sub">Entrez votre adresse e-mail pour recevoir un lien de réinitialisation.</div>
+
+      <div class="field">
+        <label>Adresse e-mail</label>
+        <input type="email" id="forgot-email" placeholder="vous@exemple.com"/>
+      </div>
+
+      <div class="msg" id="forgot-msg"></div>
+      <button class="btn-primary" id="btn-forgot">Envoyer le lien</button>
+    </div>
+
+    <!-- ── SUCCESS (reset email sent) ── -->
+    <div class="form-view" id="view-success">
+      <div class="check-icon">
+        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div class="form-title" style="text-align:center">E-mail envoyé !</div>
+      <div class="form-sub" style="text-align:center;margin-bottom:32px">
+        Vérifiez votre boîte de réception et suivez les instructions pour réinitialiser votre mot de passe.
+      </div>
+      <button class="btn-primary" id="btn-back-login">Retour à la connexion</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     PAGE D'ACCUEIL (cachée par défaut)
+══════════════════════════════════════ -->
+<div id="home-page" style="display:none; width:100%; min-height:100vh; flex-direction:column;">
+
+  <!-- Navbar -->
+  <nav class="home-nav">
+    <div class="nav-brand">
+      <div class="brand-icon" style="width:34px;height:34px;">
+        <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:var(--gold)"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+      </div>
+      <span class="brand-name" style="font-size:1.1rem;">Nexora</span>
+    </div>
+    <div class="nav-right">
+      <div class="nav-avatar" id="nav-avatar">J</div>
+      <span class="nav-username" id="nav-username">Utilisateur</span>
+      <button class="btn-logout" id="btn-logout">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+          <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>
+        </svg>
+        Déconnexion
+      </button>
+    </div>
+  </nav>
+
+  <!-- Hero accueil -->
+  <main class="home-main">
+    <div class="home-hero">
+      <div class="home-greeting" id="home-greeting">Bonjour, <span id="greeting-name">–</span> 👋</div>
+      <p class="home-sub">Vous êtes connecté à votre espace Nexora. Que souhaitez-vous faire aujourd'hui ?</p>
+    </div>
+
+    <!-- Cards placeholder -->
+    <div class="home-cards">
+      <div class="home-card">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        </div>
+        <div class="card-label">Tableau de bord</div>
+        <div class="card-desc">Visualisez vos données et statistiques.</div>
+      </div>
+      <div class="home-card">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <div class="card-label">Mon profil</div>
+        <div class="card-desc">Gérez vos informations personnelles.</div>
+      </div>
+      <div class="home-card">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <div class="card-label">Notifications</div>
+        <div class="card-desc">Aucune nouvelle notification.</div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<style>
+  /* ── Home page ── */
+  #home-page { background: var(--navy); }
+
+  .home-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 48px;
+    border-bottom: 1px solid rgba(201,168,76,0.12);
+    background: var(--navy-mid);
+  }
+  .nav-brand { display: flex; align-items: center; gap: 12px; }
+  .nav-right  { display: flex; align-items: center; gap: 16px; }
+
+  .nav-avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: var(--gold);
+    color: var(--navy);
+    font-weight: 700;
+    font-size: 0.9rem;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .nav-username { font-size: 0.88rem; color: var(--white); font-weight: 500; }
+
+  .btn-logout {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(224,92,92,0.1);
+    border: 1px solid rgba(224,92,92,0.3);
+    color: #e05c5c;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: background var(--transition), border-color var(--transition);
+  }
+  .btn-logout:hover { background: rgba(224,92,92,0.2); border-color: rgba(224,92,92,0.5); }
+
+  .home-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 48px;
+    gap: 56px;
+  }
+
+  .home-hero { text-align: center; }
+  .home-greeting {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 4vw, 3rem);
+    color: var(--white);
+    margin-bottom: 14px;
+  }
+  .home-greeting span { color: var(--gold); }
+  .home-sub { font-size: 1rem; color: var(--muted); }
+
+  .home-cards {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+    max-width: 860px;
+  }
+  .home-card {
+    flex: 1;
+    min-width: 200px;
+    max-width: 260px;
+    background: var(--navy-mid);
+    border: 1px solid rgba(201,168,76,0.1);
+    border-radius: 8px;
+    padding: 32px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition: border-color var(--transition), transform 0.2s;
+    cursor: pointer;
+  }
+  .home-card:hover {
+    border-color: rgba(201,168,76,0.4);
+    transform: translateY(-4px);
+  }
+  .card-icon { color: var(--gold); }
+  .card-label {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    color: var(--white);
+  }
+  .card-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.6; }
+
+  /* Animation entrée accueil */
+  @keyframes homeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  #home-page.visible { animation: homeIn 0.5s ease forwards; }
+</style>
+
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import {
+    getAuth,
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    sendPasswordResetEmail,
+    updateProfile,
+    signOut,
+    onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+  // ── Config Firebase ──
+  const firebaseConfig = {
+    apiKey: "AIzaSyC7rFCP5VsCgmYJsQy6ewUsjQos3K62cA8",
+    authDomain: "site-e07f0.firebaseapp.com",
+    projectId: "site-e07f0",
+    storageBucket: "site-e07f0.firebasestorage.app",
+    messagingSenderId: "644234884190",
+    appId: "1:644234884190:web:f49a36df9d6cb8c82630cf"
+  };
+
+  const app  = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  // ── View switcher ──
+  function showView(id) {
+    document.querySelectorAll('.form-view').forEach(v => v.classList.remove('active'));
+    document.getElementById('view-' + id).classList.add('active');
+    const tabs = document.getElementById('tabs');
+    tabs.style.display = (id === 'forgot' || id === 'success') ? 'none' : 'flex';
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    if (id === 'login' || id === 'register') {
+      document.querySelector(`[data-tab="${id}"]`).classList.add('active');
+    }
+  }
+
+  // ── Afficher l'accueil ──
+  function showHome(user) {
+    const firstName = user.displayName ? user.displayName.split(' ')[0] : user.email.split('@')[0];
+    document.getElementById('greeting-name').textContent = firstName;
+    document.getElementById('nav-username').textContent = firstName;
+    document.getElementById('nav-avatar').textContent = firstName.charAt(0).toUpperCase();
+
+    document.querySelector('body').style.overflow = 'auto';
+    document.querySelector('.panel-left').style.display = 'none';
+    document.querySelector('.panel-right').style.display = 'none';
+    const home = document.getElementById('home-page');
+    home.style.display = 'flex';
+    home.classList.add('visible');
+  }
+
+  function showAuth() {
+    document.querySelector('.panel-left').style.display = 'flex';
+    document.querySelector('.panel-right').style.display = 'flex';
+    document.getElementById('home-page').style.display = 'none';
+    document.getElementById('home-page').classList.remove('visible');
+    document.querySelector('body').style.overflow = 'hidden';
+    document.getElementById('login-email').value = '';
+    document.getElementById('login-password').value = '';
+    document.getElementById('login-error').textContent = '';
+    showView('login');
+  }
+
+  // ── Détection session active (rechargement de page) ──
+  onAuthStateChanged(auth, user => {
+    if (user) showHome(user);
+    else showAuth();
+  });
+
+  // ── Tabs ──
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => showView(btn.dataset.tab));
+  });
+  document.getElementById('go-forgot').addEventListener('click', e => { e.preventDefault(); showView('forgot'); });
+  document.getElementById('back-from-forgot').addEventListener('click', e => { e.preventDefault(); showView('login'); });
+  document.getElementById('btn-back-login').addEventListener('click', () => showView('login'));
+
+  // ── Déconnexion ──
+  document.getElementById('btn-logout').addEventListener('click', async () => {
+    await signOut(auth);
+    showAuth();
+  });
+
+  // ── Connexion ──
+  document.getElementById('btn-login').addEventListener('click', async () => {
+    const email = document.getElementById('login-email').value.trim();
+    const pass  = document.getElementById('login-password').value;
+    const err   = document.getElementById('login-error');
+    err.className = 'msg error';
+
+    if (!email || !pass) { err.textContent = 'Veuillez remplir tous les champs.'; return; }
+    if (!/\S+@\S+\.\S+/.test(email)) { err.textContent = 'Adresse e-mail invalide.'; return; }
+
+    try {
+      const cred = await signInWithEmailAndPassword(auth, email, pass);
+      err.textContent = '';
+      showHome(cred.user);
+    } catch (e) {
+      if (e.code === 'auth/user-not-found' || e.code === 'auth/invalid-credential')
+        err.textContent = 'Aucun compte trouvé avec cet e-mail.';
+      else if (e.code === 'auth/wrong-password')
+        err.textContent = 'Mot de passe incorrect.';
+      else if (e.code === 'auth/too-many-requests')
+        err.textContent = 'Trop de tentatives. Réessayez plus tard.';
+      else
+        err.textContent = 'Erreur : ' + e.message;
+    }
+  });
+
+  // ── Barre de force du mot de passe ──
+  window.checkStrength = function(val) {
+    const bars = ['s1','s2','s3','s4'].map(id => document.getElementById(id));
+    bars.forEach(b => b.className = '');
+    let score = 0;
+    if (val.length >= 8) score++;
+    if (/[A-Z]/.test(val)) score++;
+    if (/[0-9]/.test(val)) score++;
+    if (/[^A-Za-z0-9]/.test(val)) score++;
+    const cls = ['', 'weak', 'fair', 'good', 'strong'];
+    for (let i = 0; i < score; i++) bars[i].className = cls[score];
+  };
+
+  // ── Inscription ──
+  document.getElementById('btn-register').addEventListener('click', async () => {
+    const first   = document.getElementById('reg-first').value.trim();
+    const last    = document.getElementById('reg-last').value.trim();
+    const email   = document.getElementById('reg-email').value.trim();
+    const pass    = document.getElementById('reg-password').value;
+    const confirm = document.getElementById('reg-confirm').value;
+    const err     = document.getElementById('reg-error');
+    err.className = 'msg error';
+
+    if (!first || !last || !email || !pass || !confirm) { err.textContent = 'Veuillez remplir tous les champs.'; return; }
+    if (!/\S+@\S+\.\S+/.test(email)) { err.textContent = 'Adresse e-mail invalide.'; return; }
+    if (pass.length < 8) { err.textContent = 'Le mot de passe doit contenir au moins 8 caractères.'; return; }
+    if (pass !== confirm) { err.textContent = 'Les mots de passe ne correspondent pas.'; return; }
+
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email, pass);
+      await updateProfile(cred.user, { displayName: `${first} ${last}` });
+      err.textContent = '';
+      showHome(cred.user);
+    } catch (e) {
+      if (e.code === 'auth/email-already-in-use')
+        err.textContent = 'Un compte existe déjà avec cet e-mail.';
+      else if (e.code === 'auth/weak-password')
+        err.textContent = 'Mot de passe trop faible.';
+      else
+        err.textContent = 'Erreur : ' + e.message;
+    }
+  });
+
+  // ── Mot de passe oublié ──
+  document.getElementById('btn-forgot').addEventListener('click', async () => {
+    const email = document.getElementById('forgot-email').value.trim();
+    const msg   = document.getElementById('forgot-msg');
+
+    if (!email) { msg.className = 'msg error'; msg.textContent = 'Veuillez entrer votre adresse e-mail.'; return; }
+    if (!/\S+@\S+\.\S+/.test(email)) { msg.className = 'msg error'; msg.textContent = 'Adresse e-mail invalide.'; return; }
+
+    try {
+      await sendPasswordResetEmail(auth, email);
+      msg.textContent = '';
+      showView('success');
+    } catch (e) {
+      if (e.code === 'auth/user-not-found' || e.code === 'auth/invalid-credential')
+        { msg.className = 'msg error'; msg.textContent = 'Aucun compte trouvé avec cet e-mail.'; }
+      else
+        { msg.className = 'msg error'; msg.textContent = 'Erreur : ' + e.message; }
+    }
+  });
+</script>
+</body>
+</html>
