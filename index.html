@@ -629,6 +629,7 @@
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
     sendPasswordResetEmail,
+    sendEmailVerification,
     updateProfile,
     signOut,
     onAuthStateChanged
@@ -688,7 +689,8 @@
  
   // ── Détection session active (rechargement de page) ──
   onAuthStateChanged(auth, user => {
-    if (user) showHome(user);
+    if (user && user.emailVerified) showHome(user);
+    else if (user && !user.emailVerified) { signOut(auth); showAuth(); }
     else showAuth();
   });
  
@@ -718,6 +720,24 @@
  
     try {
       const cred = await signInWithEmailAndPassword(auth, email, pass);
+ 
+      // ── Vérification e-mail obligatoire ──
+      if (!cred.user.emailVerified) {
+        await signOut(auth);
+        err.className = 'msg error';
+        err.innerHTML = 'Votre e-mail n\'est pas encore vérifié. <a href="#" id="resend-link" style="color:var(--gold)">Renvoyer l\'e-mail</a>';
+        document.getElementById('resend-link').addEventListener('click', async e => {
+          e.preventDefault();
+          // Re-connecte brièvement pour envoyer l'e-mail
+          const cred2 = await signInWithEmailAndPassword(auth, email, pass);
+          await sendEmailVerification(cred2.user);
+          await signOut(auth);
+          err.className = 'msg success';
+          err.textContent = '✓ E-mail de vérification renvoyé !';
+        });
+        return;
+      }
+ 
       err.textContent = '';
       showHome(cred.user);
     } catch (e) {
@@ -763,8 +783,15 @@
     try {
       const cred = await createUserWithEmailAndPassword(auth, email, pass);
       await updateProfile(cred.user, { displayName: `${first} ${last}` });
-      err.textContent = '';
-      showHome(cred.user);
+      await sendEmailVerification(cred.user);
+      await signOut(auth);
+ 
+      // Pré-remplir l'e-mail et afficher message
+      document.getElementById('login-email').value = email;
+      showView('login');
+      const loginErr = document.getElementById('login-error');
+      loginErr.className = 'msg success';
+      loginErr.textContent = '✓ Compte créé ! Vérifiez votre boîte mail pour activer votre compte.';
     } catch (e) {
       if (e.code === 'auth/email-already-in-use')
         err.textContent = 'Un compte existe déjà avec cet e-mail.';
